@@ -1,6 +1,9 @@
+local telescope = require("mybot-notes.telescope")
+
 return require("telescope").register_extension({
   exports = {
-    search = require("mybot-notes.telescope").search,
-    tags = require("mybot-notes.telescope").tags,
+    mybot_notes = telescope.search,
+    search = telescope.search,
+    tags = telescope.tags,
   },
 })
