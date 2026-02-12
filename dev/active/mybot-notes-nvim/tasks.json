@@ -44,7 +44,7 @@
     "files": [
       "lua/mybot-notes/buffer.lua"
     ],
-    "completed": false
+    "completed": true
   },
   {
     "id": 6,
