@@ -95,6 +95,7 @@ function M.open(note)
   -- Set buffer options and autocmd
   set_buf_options(bufnr)
   register_write_autocmd(bufnr)
+  require("mybot-notes.navigation").setup_buffer_keymaps(bufnr)
 
   -- Switch to the buffer
   vim.api.nvim_set_current_buf(bufnr)
@@ -119,6 +120,7 @@ function M.create_new(title)
   -- Set buffer options and autocmd
   set_buf_options(bufnr)
   register_write_autocmd(bufnr)
+  require("mybot-notes.navigation").setup_buffer_keymaps(bufnr)
 
   -- Switch to the buffer
   vim.api.nvim_set_current_buf(bufnr)
