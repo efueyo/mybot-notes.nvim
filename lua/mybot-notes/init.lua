@@ -63,16 +63,16 @@ function M.setup(opts)
   -- Global keymaps
   local keymaps = config.values.keymaps
   if keymaps.create and keymaps.create ~= "" and keymaps.create ~= false then
-    vim.keymap.set("n", keymaps.create, "<cmd>NotesNew<cr>", { desc = "New note" })
+    vim.keymap.set("n", keymaps.create, "<cmd>NotesNew<cr>", { desc = "Mybot New note" })
   end
   if keymaps.search and keymaps.search ~= "" and keymaps.search ~= false then
-    vim.keymap.set("n", keymaps.search, "<cmd>NotesSearch<cr>", { desc = "Search notes" })
+    vim.keymap.set("n", keymaps.search, "<cmd>NotesSearch<cr>", { desc = "Mybot Search notes" })
   end
   if keymaps.daily and keymaps.daily ~= "" and keymaps.daily ~= false then
-    vim.keymap.set("n", keymaps.daily, "<cmd>NotesDaily<cr>", { desc = "Daily note" })
+    vim.keymap.set("n", keymaps.daily, "<cmd>NotesDaily<cr>", { desc = "Mybot Daily note" })
   end
   if keymaps.tags and keymaps.tags ~= "" and keymaps.tags ~= false then
-    vim.keymap.set("n", keymaps.tags, "<cmd>NotesTags<cr>", { desc = "Browse tags" })
+    vim.keymap.set("n", keymaps.tags, "<cmd>NotesTags<cr>", { desc = "Mybot Browse tags" })
   end
 
   -- Optional: nvim-cmp integration
