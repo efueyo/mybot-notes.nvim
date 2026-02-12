@@ -1,0 +1,105 @@
+[
+  {
+    "id": 1,
+    "title": "Create plugin skeleton, entry point, and config module",
+    "description": "Create the directory structure with all subdirectories (lua/mybot-notes/, lua/telescope/_extensions/, plugin/). Create plugin/mybot-notes.lua with the lazy load guard (vim.g.loaded_mybot_notes). Create lua/mybot-notes/config.lua with the defaults table (base_url, api_key, api_key_cmd, cache_ttl, cache_dir, keymaps), the setup(opts) function that deep-merges with vim.tbl_deep_extend, validates required fields, and resolves api_key_cmd synchronously via vim.system. Create lua/mybot-notes/init.lua with an empty setup(opts) that calls config.setup(opts) and returns M.",
+    "files": [
+      "plugin/mybot-notes.lua",
+      "lua/mybot-notes/init.lua",
+      "lua/mybot-notes/config.lua"
+    ],
+    "completed": true
+  },
+  {
+    "id": 2,
+    "title": "Implement async API client with plenary.curl",
+    "description": "Create lua/mybot-notes/api.lua with all HTTP methods: get_all, search, get, create, update, delete, daily. Use require('plenary.curl') methods (curl.get, curl.post, curl.put, curl.delete) with the callback option for async execution. Each method passes url (config.values.base_url .. path), headers (Authorization Bearer from config.get_api_key(), Accept: application/json, and Content-Type for POST/PUT), body (vim.json.encode for POST/PUT), and a callback function. The plenary callback receives a response table with status, body, headers, exit fields. Inside the callback, wrap Neovim API calls with vim.schedule(), decode body with vim.json.decode(response.body). On non-2xx status call the user callback with (err_string, nil). On success call (nil, decoded_table). For search(), pass query params via the query option: {q = query}.",
+    "files": [
+      "lua/mybot-notes/api.lua"
+    ],
+    "completed": true
+  },
+  {
+    "id": 3,
+    "title": "Implement cache core: state, persistence, and index rebuilding",
+    "description": "Create lua/mybot-notes/cache.lua with the local state table (notes, notes_by_id, notes_by_title, tags, last_synced_at, loaded). Implement load() to read cache.json from config.values.cache_dir using vim.fn.readfile + vim.json.decode, falling back to empty state on decode error or missing file. Implement persist() to write state to disk via vim.fn.writefile + vim.json.encode, creating the directory with vim.fn.mkdir(dir, 'p') if needed. Implement rebuild_indexes() to populate notes_by_id (id→note), notes_by_title (lowercase title→note), and tags (sorted unique tags collected from all notes). Implement upsert(note) which finds an existing note by id and replaces it or appends, then calls rebuild_indexes() and persist(). Implement remove(id) which filters the note out of state.notes, then calls rebuild_indexes() and persist().",
+    "files": [
+      "lua/mybot-notes/cache.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 4,
+    "title": "Implement cache sync, staleness check, and query functions",
+    "description": "In lua/mybot-notes/cache.lua, add is_stale() checking last_synced_at + config.values.cache_ttl < os.time(). Add sync(callback) that calls api.get_all, replaces state.notes with the response, sets last_synced_at to os.time(), rebuilds indexes, persists, and calls callback. Add ensure_fresh(callback) that calls load() if not yet loaded, then checks is_stale() — if stale calls sync(callback), otherwise calls callback immediately. Add local query functions: search(query) for case-insensitive substring match on title and content returning title-matches first; get_tags() returning the cached sorted tag list; get_by_tag(tag) filtering notes by tag with case-insensitive match; find_by_title(title) for case-insensitive exact title lookup via notes_by_title index; find_by_id(id) via notes_by_id index; get_titles() returning a list of {id, title} for all cached notes.",
+    "files": [
+      "lua/mybot-notes/cache.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 5,
+    "title": "Implement buffer module: create, open, metadata, and options",
+    "description": "Create lua/mybot-notes/buffer.lua. Implement open(note) which checks all existing buffers for one named mynotes://{note.id} and switches to it if found, otherwise creates a new buffer with nvim_create_buf(true, false), sets the name to mynotes://{note.id}, populates content via nvim_buf_set_lines, sets buffer-local variables (mynotes_id, mynotes_title, mynotes_is_new=false), sets buffer options (filetype=markdown, buftype=acwrite, modified=false, swapfile=false), and creates a BufWriteCmd autocmd scoped to the buffer. Implement create_new(title) which creates a new buffer named mynotes://new-{os.time()}, optionally pre-populates with '# <title>\\n\\n' if title is provided, sets mynotes_is_new=true, and the same buffer options and autocmd. Implement close(id) to find and delete the buffer for a given note id. Implement extract_title(bufnr) that scans the first 5 lines for a markdown heading pattern (^#+ (.+)), falls back to first non-empty line truncated to 60 chars, or generates 'Quick note — <date>'.",
+    "files": [
+      "lua/mybot-notes/buffer.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 6,
+    "title": "Implement BufWriteCmd save handler for create and update flows",
+    "description": "In lua/mybot-notes/buffer.lua, implement the save(bufnr) function that is called from the BufWriteCmd autocmd. It reads all buffer lines via nvim_buf_get_lines, joins them with newline into a content string, calls extract_title(bufnr) for the title. If mynotes_is_new is true: call api.create(title, content, callback) where the callback on success sets mynotes_id from the response, sets mynotes_is_new=false, renames the buffer to mynotes://{note.id} via nvim_buf_set_name, calls cache.upsert(note), sets modified=false, and notifies 'Note created'. On error: notify the error message and keep modified=true so the user doesn't lose content. If mynotes_is_new is false: call api.update(mynotes_id, title, content, callback) where success calls cache.upsert(note), sets modified=false, and notifies 'Note saved'. On error: same error handling. All API callbacks are already vim.schedule-wrapped in api.lua.",
+    "files": [
+      "lua/mybot-notes/buffer.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 7,
+    "title": "Implement init.lua setup with commands, keymaps, and integrations",
+    "description": "In lua/mybot-notes/init.lua, flesh out the setup(opts) function. After config.setup(opts), register user commands via vim.api.nvim_create_user_command: NotesNew (calls buffer.create_new()), NotesDaily (calls api.daily then buffer.open on success), NotesDelete (validates current buffer has mynotes_id, confirms with vim.fn.confirm, calls api.delete then cache.remove and buffer.close), NotesSync (calls cache.sync with success notification), NotesSearch and NotesTags (use lazy requires inside the callback: require('mybot-notes.telescope').search() and .tags(), so the commands are safe to register before telescope.lua exists). Register global keymaps from config.values.keymaps using vim.keymap.set with desc fields — skip any keymap set to false or empty string. Conditionally register nvim-cmp source with pcall(require, 'cmp') guarding cmp.register_source('mybot_notes', require('mybot-notes.cmp').new()). Conditionally load telescope extension with pcall(require, 'telescope') guarding telescope.load_extension('mybot_notes').",
+    "files": [
+      "lua/mybot-notes/init.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 8,
+    "title": "Implement Telescope search picker with preview and note opening",
+    "description": "Create lua/mybot-notes/telescope.lua with a search(opts) function. It calls cache.ensure_fresh(callback) then opens a Telescope picker. Use pickers.new with a finders.new_table finder where results come from all cached notes (let Telescope's built-in sorter handle fuzzy filtering) — if opts.default_tag is set, use cache.get_by_tag(tag) instead. The entry_maker maps each note to an entry with display=note.title, ordinal=note.title..' '..note.content, value=note. Use conf.generic_sorter for fuzzy matching. Use previewers.new_buffer_previewer that sets preview buffer content to note.content lines with filetype=markdown. In attach_mappings: map <CR> to buffer.open(selected.value) and close picker. Map <C-d> to delete: confirm with vim.fn.confirm, call api.delete, cache.remove, refresh picker results. Set prompt_title to 'Notes' or 'Notes #tag' if default_tag is set.",
+    "files": [
+      "lua/mybot-notes/telescope.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 9,
+    "title": "Implement Telescope tag picker and register extension entry point",
+    "description": "In lua/mybot-notes/telescope.lua, add a tags(opts) function. It calls cache.ensure_fresh(callback) then opens a Telescope picker. Use finders.new_table with results from cache.get_tags() (list of tag strings). Entry maker: display='#'..tag, ordinal=tag, value=tag. On <CR>: close picker and call search({ default_tag = selected_tag }). Create lua/telescope/_extensions/mybot_notes.lua that calls require('telescope').register_extension with exports mapping 'search' and 'tags' to the telescope module functions.",
+    "files": [
+      "lua/mybot-notes/telescope.lua",
+      "lua/telescope/_extensions/mybot_notes.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 10,
+    "title": "Implement nvim-cmp source for wikilink autocompletion",
+    "description": "Create lua/mybot-notes/cmp.lua implementing the nvim-cmp source interface. The source constructor returns a new instance via setmetatable. Implement is_available() returning true only when the current buffer is a note buffer (vim.b.mynotes_id ~= nil or vim.b.mynotes_is_new == true) — this prevents the source from firing on [ keystrokes in non-note buffers. get_trigger_characters returns {'['}. The complete method checks if cursor_before_line matches the pattern %[%[([^%]]*)$ (cursor is after [[). If not, returns empty items. If yes, gets titles from cache.get_titles() and maps each to a completion item with label=title, insertText=title..']]', filterText='[['..title, kind=18 (Reference). get_keyword_pattern returns the Vim regex pattern that matches text after [[ up to the cursor. The source only reads from local cache — no API calls during completion.",
+    "files": [
+      "lua/mybot-notes/cmp.lua"
+    ],
+    "completed": false
+  },
+  {
+    "id": 11,
+    "title": "Implement navigation: gf on [[wikilinks]] and #tags in note buffers",
+    "description": "Create lua/mybot-notes/navigation.lua. Implement setup_buffer_keymaps(bufnr) that sets a buffer-local 'gf' keymap calling handle_gf(). The handle_gf function gets the current line and cursor column (1-indexed). It calls find_wikilink_at(line, col) which iterates all [[...]] matches via string.gmatch with position tracking, returning the title if cursor falls inside a match. If a wikilink is found: look up via cache.find_by_title(title), if found call buffer.open(note), if not found call buffer.create_new(title) to create a new note with that title. If no wikilink, call find_tag_at(line, col) which iterates #(%w+) matches similarly. If a tag is found: call telescope.search({ default_tag = tag }). If neither wikilink nor tag: fall back to the original gf via vim.cmd('normal! gf') which is safe because normal! bypasses all user mappings including buffer-local ones. Wire setup_buffer_keymaps into buffer.open() and buffer.create_new() so navigation keymaps are set on every note buffer.",
+    "files": [
+      "lua/mybot-notes/navigation.lua",
+      "lua/mybot-notes/buffer.lua"
+    ],
+    "completed": false
+  }
+]
