@@ -114,4 +114,53 @@ function M.search(opts)
   end)
 end
 
+--- Open the tag picker. Selecting a tag opens the search picker filtered by that tag.
+---@param opts table|nil
+function M.tags(opts)
+  opts = opts or {}
+
+  local ok, _ = pcall(require, "telescope")
+  if not ok then
+    vim.notify("mybot-notes: telescope.nvim is required for tags", vim.log.levels.ERROR)
+    return
+  end
+
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local conf = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local action_state = require("telescope.actions.state")
+
+  cache.ensure_fresh(function()
+    local tags = cache.get_tags()
+
+    pickers
+      .new(opts, {
+        prompt_title = "Tags",
+        finder = finders.new_table({
+          results = tags,
+          entry_maker = function(tag)
+            return {
+              value = tag,
+              display = "#" .. tag,
+              ordinal = tag,
+            }
+          end,
+        }),
+        sorter = conf.generic_sorter(opts),
+        attach_mappings = function(prompt_bufnr)
+          actions.select_default:replace(function()
+            local selection = action_state.get_selected_entry()
+            actions.close(prompt_bufnr)
+            if selection then
+              M.search({ default_tag = selection.value })
+            end
+          end)
+          return true
+        end,
+      })
+      :find()
+  end)
+end
+
 return M

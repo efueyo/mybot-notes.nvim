@@ -81,7 +81,7 @@
       "lua/mybot-notes/telescope.lua",
       "lua/telescope/_extensions/mybot_notes.lua"
     ],
-    "completed": false
+    "completed": true
   },
   {
     "id": 10,
