@@ -20,6 +20,14 @@ function M.setup(opts)
   M.values = vim.tbl_deep_extend("force", {}, M.defaults, opts or {})
 
   if M.values.base_url == "" then
+    M.values.base_url = vim.env.MYBOT_NOTES_BASE_URL or ""
+  end
+
+  if M.values.api_key == "" or M.values.api_key == nil then
+    M.values.api_key = vim.env.MYBOT_NOTES_API_KEY or ""
+  end
+
+  if M.values.base_url == "" then
     vim.notify("mybot-notes: base_url is required", vim.log.levels.ERROR)
     return
   end

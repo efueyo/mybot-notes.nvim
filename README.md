@@ -30,6 +30,12 @@ require("mybot-notes").setup({
 })
 ```
 
+`base_url` and `api_key` fall back to the `MYBOT_NOTES_BASE_URL` and `MYBOT_NOTES_API_KEY` environment variables when not provided, so you can also just:
+
+```lua
+require("mybot-notes").setup({})
+```
+
 All config with defaults:
 
 ```lua
