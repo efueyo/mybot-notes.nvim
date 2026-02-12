@@ -71,7 +71,7 @@
     "files": [
       "lua/mybot-notes/telescope.lua"
     ],
-    "completed": false
+    "completed": true
   },
   {
     "id": 9,
