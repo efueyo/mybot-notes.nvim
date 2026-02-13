@@ -9,6 +9,7 @@ local state = {
   tags = {},
   last_synced_at = 0,
   loaded = false,
+  syncing = false,
 }
 
 --- Get the path to the cache file on disk.
@@ -43,33 +44,34 @@ function M.rebuild_indexes()
   state.tags = sorted_tags
 end
 
---- Load cache from disk into memory. No-op if already loaded.
+--- Load cache from disk (once) and trigger a background sync when stale.
 function M.load()
-  if state.loaded then
-    return
-  end
-  state.loaded = true
+  if not state.loaded then
+    state.loaded = true
 
-  local path = cache_path()
-  if vim.fn.filereadable(path) ~= 1 then
-    return
-  end
-
-  local lines = vim.fn.readfile(path)
-  if #lines == 0 then
-    return
-  end
-
-  local raw = table.concat(lines, "\n")
-  local ok, data = pcall(vim.json.decode, raw)
-  if not ok or type(data) ~= "table" then
-    vim.notify("mybot-notes: cache file corrupted, starting fresh", vim.log.levels.WARN)
-    return
+    local path = cache_path()
+    if vim.fn.filereadable(path) == 1 then
+      local lines = vim.fn.readfile(path)
+      if #lines > 0 then
+        local raw = table.concat(lines, "\n")
+        local ok, data = pcall(vim.json.decode, raw)
+        if ok and type(data) == "table" then
+          state.notes = data.notes or {}
+          state.last_synced_at = data.last_synced_at or 0
+          M.rebuild_indexes()
+        else
+          vim.notify("mybot-notes: cache file corrupted, starting fresh", vim.log.levels.WARN)
+        end
+      end
+    end
   end
 
-  state.notes = data.notes or {}
-  state.last_synced_at = data.last_synced_at or 0
-  M.rebuild_indexes()
+  if M.is_stale() and not state.syncing then
+    state.syncing = true
+    M.sync(function()
+      state.syncing = false
+    end)
+  end
 end
 
 --- Persist in-memory state to disk.
@@ -144,25 +146,13 @@ function M.sync(callback)
   end)
 end
 
---- If stale, sync first then call callback. Otherwise call callback immediately.
---- This is the main entry point for read operations.
----@param callback function
-function M.ensure_fresh(callback)
-  M.load()
-  if M.is_stale() then
-    M.sync(callback)
-  else
-    if callback then
-      callback()
-    end
-  end
-end
 
 --- Search notes locally. Case-insensitive substring match on title and content.
 --- Returns matching notes, title matches sorted first.
 ---@param query string
 ---@return table[]
 function M.search(query)
+  M.load()
   local q = query:lower()
   local title_matches = {}
   local content_matches = {}
@@ -187,6 +177,7 @@ end
 --- Return sorted list of unique tags across all cached notes.
 ---@return string[]
 function M.get_tags()
+  M.load()
   return state.tags
 end
 
@@ -194,6 +185,7 @@ end
 ---@param tag string
 ---@return table[]
 function M.get_by_tag(tag)
+  M.load()
   local t = tag:lower()
   local results = {}
   for _, note in ipairs(state.notes) do
@@ -213,6 +205,7 @@ end
 ---@param title string
 ---@return table|nil
 function M.find_by_title(title)
+  M.load()
   return state.notes_by_title[title:lower()]
 end
 
@@ -220,12 +213,14 @@ end
 ---@param id string
 ---@return table|nil
 function M.find_by_id(id)
+  M.load()
   return state.notes_by_id[id]
 end
 
 --- Return list of {id, title} for all cached notes (used by cmp source).
 ---@return table[]
 function M.get_titles()
+  M.load()
   local result = {}
   for _, note in ipairs(state.notes) do
     result[#result + 1] = { id = note.id, title = note.title }

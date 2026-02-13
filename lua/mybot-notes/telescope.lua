@@ -42,76 +42,74 @@ function M.search(opts)
   local actions = require("telescope.actions")
   local action_state = require("telescope.actions.state")
 
-  cache.ensure_fresh(function()
-    local notes = get_notes(opts.default_tag)
-    local prompt_title = opts.default_tag and ("Notes #" .. opts.default_tag) or "Notes"
+  local notes = get_notes(opts.default_tag)
+  local prompt_title = opts.default_tag and ("Notes #" .. opts.default_tag) or "Notes"
 
-    local function make_finder(results)
-      return finders.new_table({
-        results = results,
-        entry_maker = make_entry,
-      })
+  local function make_finder(results)
+    return finders.new_table({
+      results = results,
+      entry_maker = make_entry,
+    })
+  end
+
+  local function delete_selected(prompt_bufnr)
+    local selection = action_state.get_selected_entry()
+    if not selection then
+      return
     end
-
-    local function delete_selected(prompt_bufnr)
-      local selection = action_state.get_selected_entry()
-      if not selection then
+    local note = selection.value
+    local choice = vim.fn.confirm("Delete note: " .. (note.title or note.id) .. "?", "&Yes\n&No", 2)
+    if choice ~= 1 then
+      return
+    end
+    api.delete(note.id, function(err)
+      if err then
+        vim.notify("Failed to delete note: " .. err, vim.log.levels.ERROR)
         return
       end
-      local note = selection.value
-      local choice = vim.fn.confirm("Delete note: " .. (note.title or note.id) .. "?", "&Yes\n&No", 2)
-      if choice ~= 1 then
-        return
-      end
-      api.delete(note.id, function(err)
-        if err then
-          vim.notify("Failed to delete note: " .. err, vim.log.levels.ERROR)
-          return
-        end
-        cache.remove(note.id)
-        buffer.close(note.id)
-        vim.notify("Note deleted", vim.log.levels.INFO)
+      cache.remove(note.id)
+      buffer.close(note.id)
+      vim.notify("Note deleted", vim.log.levels.INFO)
 
-        local current_picker = action_state.get_current_picker(prompt_bufnr)
-        current_picker:refresh(make_finder(get_notes(opts.default_tag)))
-      end)
-    end
+      local current_picker = action_state.get_current_picker(prompt_bufnr)
+      current_picker:refresh(make_finder(get_notes(opts.default_tag)))
+    end)
+  end
 
-    pickers
-      .new(opts, {
-        prompt_title = prompt_title,
-        finder = make_finder(notes),
-        sorter = conf.generic_sorter(opts),
-        previewer = previewers.new_buffer_previewer({
-          title = "Note Preview",
-          define_preview = function(self, entry)
-            local content = entry.value.content or ""
-            local lines = vim.split(content, "\n", { plain = true })
-            vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
-            vim.bo[self.state.bufnr].filetype = "markdown"
-          end,
-        }),
-        attach_mappings = function(prompt_bufnr, map)
-          actions.select_default:replace(function()
-            local selection = action_state.get_selected_entry()
-            actions.close(prompt_bufnr)
-            if selection then
-              buffer.open(selection.value)
-            end
-          end)
-
-          map("i", "<C-d>", function()
-            delete_selected(prompt_bufnr)
-          end)
-          map("n", "<C-d>", function()
-            delete_selected(prompt_bufnr)
-          end)
-
-          return true
+  pickers
+    .new(opts, {
+      prompt_title = prompt_title,
+      finder = make_finder(notes),
+      sorter = conf.generic_sorter(opts),
+      previewer = previewers.new_buffer_previewer({
+        title = "Note Preview",
+        define_preview = function(self, entry)
+          local content = entry.value.content or ""
+          local lines = vim.split(content, "\n", { plain = true })
+          vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+          vim.bo[self.state.bufnr].filetype = "markdown"
         end,
-      })
-      :find()
-  end)
+      }),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          local selection = action_state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if selection then
+            buffer.open(selection.value)
+          end
+        end)
+
+        map("i", "<C-d>", function()
+          delete_selected(prompt_bufnr)
+        end)
+        map("n", "<C-d>", function()
+          delete_selected(prompt_bufnr)
+        end)
+
+        return true
+      end,
+    })
+    :find()
 end
 
 --- Open the tag picker. Selecting a tag opens the search picker filtered by that tag.
@@ -131,36 +129,34 @@ function M.tags(opts)
   local actions = require("telescope.actions")
   local action_state = require("telescope.actions.state")
 
-  cache.ensure_fresh(function()
-    local tags = cache.get_tags()
+  local tags = cache.get_tags()
 
-    pickers
-      .new(opts, {
-        prompt_title = "Tags",
-        finder = finders.new_table({
-          results = tags,
-          entry_maker = function(tag)
-            return {
-              value = tag,
-              display = "#" .. tag,
-              ordinal = tag,
-            }
-          end,
-        }),
-        sorter = conf.generic_sorter(opts),
-        attach_mappings = function(prompt_bufnr)
-          actions.select_default:replace(function()
-            local selection = action_state.get_selected_entry()
-            actions.close(prompt_bufnr)
-            if selection then
-              M.search({ default_tag = selection.value })
-            end
-          end)
-          return true
+  pickers
+    .new(opts, {
+      prompt_title = "Tags",
+      finder = finders.new_table({
+        results = tags,
+        entry_maker = function(tag)
+          return {
+            value = tag,
+            display = "#" .. tag,
+            ordinal = tag,
+          }
         end,
-      })
-      :find()
-  end)
+      }),
+      sorter = conf.generic_sorter(opts),
+      attach_mappings = function(prompt_bufnr)
+        actions.select_default:replace(function()
+          local selection = action_state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if selection then
+            M.search({ default_tag = selection.value })
+          end
+        end)
+        return true
+      end,
+    })
+    :find()
 end
 
 return M
