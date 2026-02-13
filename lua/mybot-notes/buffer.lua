@@ -21,6 +21,21 @@ local function set_buf_options(bufnr)
   vim.bo[bufnr].swapfile = false
 end
 
+--- Add the mybot_notes cmp source to the buffer's completion sources.
+local function setup_cmp()
+  local ok, cmp = pcall(require, "cmp")
+  if not ok then
+    return
+  end
+  local sources = { { name = "mybot_notes" } }
+  for _, s in ipairs(cmp.get_config().sources or {}) do
+    if s.name ~= "mybot_notes" then
+      sources[#sources + 1] = s
+    end
+  end
+  cmp.setup.buffer({ sources = sources })
+end
+
 --- Register BufWriteCmd autocmd for a note buffer.
 ---@param bufnr number
 local function register_write_autocmd(bufnr)
@@ -99,6 +114,7 @@ function M.open(note)
 
   -- Switch to the buffer
   vim.api.nvim_set_current_buf(bufnr)
+  setup_cmp()
 end
 
 --- Create a new empty note buffer.
@@ -124,6 +140,7 @@ function M.create_new(title)
 
   -- Switch to the buffer
   vim.api.nvim_set_current_buf(bufnr)
+  setup_cmp()
 end
 
 --- BufWriteCmd handler — called on :w in a note buffer.
