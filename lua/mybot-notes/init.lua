@@ -10,8 +10,8 @@ function M.setup(opts)
 
   -- User commands
   vim.api.nvim_create_user_command("NotesNew", function()
-    buffer.create_new()
-  end, { desc = "Create a new note" })
+    require("mybot-notes.telescope").template_picker()
+  end, { desc = "Mybot Create a new note (pick template)" })
 
   vim.api.nvim_create_user_command("NotesDaily", function()
     api.daily(function(err, note)
@@ -46,11 +46,47 @@ function M.setup(opts)
     end)
   end, { desc = "Delete the current note" })
 
+  vim.api.nvim_create_user_command("NotesMakeTemplate", function()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local id = vim.b[bufnr].mynotes_id
+    if not id or vim.b[bufnr].mynotes_is_new then
+      vim.notify("Save the note first before converting to a template", vim.log.levels.WARN)
+      return
+    end
+    if vim.b[bufnr].mynotes_is_template then
+      vim.notify("Already a template", vim.log.levels.WARN)
+      return
+    end
+    local title = vim.b[bufnr].mynotes_title or id
+    local choice = vim.fn.confirm("Convert to template: " .. title .. "?", "&Yes\n&No", 2)
+    if choice ~= 1 then
+      return
+    end
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local content = table.concat(lines, "\n")
+    local extracted_title = buffer.extract_title(bufnr)
+    api.make_template(id, extracted_title, content, function(err, note)
+      if err then
+        vim.notify("Failed to convert to template: " .. err, vim.log.levels.ERROR)
+        return
+      end
+      vim.b[bufnr].mynotes_is_template = true
+      vim.b[bufnr].mynotes_title = note.title
+      vim.api.nvim_buf_set_name(bufnr, "mynotes://template/" .. id)
+      vim.bo[bufnr].modified = false
+      cache.remove(id)
+      cache.upsert_template(note)
+      cache.refresh_all(function()
+        vim.notify("Note converted to template", vim.log.levels.INFO)
+      end)
+    end)
+  end, { desc = "Mybot Convert current note to a template" })
+
   vim.api.nvim_create_user_command("NotesSync", function()
-    cache.sync(function()
+    cache.refresh_all(function()
       vim.notify("Notes synced", vim.log.levels.INFO)
     end)
-  end, { desc = "Sync notes cache from server" })
+  end, { desc = "Mybot Sync notes and templates cache from server" })
 
   vim.api.nvim_create_user_command("NotesSearch", function()
     require("mybot-notes.telescope").search()

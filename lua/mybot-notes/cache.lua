@@ -10,6 +10,10 @@ local state = {
   last_synced_at = 0,
   loaded = false,
   syncing = false,
+  -- Template state
+  templates = {},
+  templates_last_synced_at = 0,
+  templates_syncing = false,
 }
 
 --- Get the path to the cache file on disk.
@@ -44,27 +48,35 @@ function M.rebuild_indexes()
   state.tags = sorted_tags
 end
 
---- Load cache from disk (once) and trigger a background sync when stale.
-function M.load()
-  if not state.loaded then
-    state.loaded = true
+--- Load cache from disk (once). Does not trigger any syncs.
+local function load_from_disk()
+  if state.loaded then
+    return
+  end
+  state.loaded = true
 
-    local path = cache_path()
-    if vim.fn.filereadable(path) == 1 then
-      local lines = vim.fn.readfile(path)
-      if #lines > 0 then
-        local raw = table.concat(lines, "\n")
-        local ok, data = pcall(vim.json.decode, raw)
-        if ok and type(data) == "table" then
-          state.notes = data.notes or {}
-          state.last_synced_at = data.last_synced_at or 0
-          M.rebuild_indexes()
-        else
-          vim.notify("mybot-notes: cache file corrupted, starting fresh", vim.log.levels.WARN)
-        end
+  local path = cache_path()
+  if vim.fn.filereadable(path) == 1 then
+    local lines = vim.fn.readfile(path)
+    if #lines > 0 then
+      local raw = table.concat(lines, "\n")
+      local ok, data = pcall(vim.json.decode, raw)
+      if ok and type(data) == "table" then
+        state.notes = data.notes or {}
+        state.last_synced_at = data.last_synced_at or 0
+        state.templates = data.templates or {}
+        state.templates_last_synced_at = data.templates_last_synced_at or 0
+        M.rebuild_indexes()
+      else
+        vim.notify("mybot-notes: cache file corrupted, starting fresh", vim.log.levels.WARN)
       end
     end
   end
+end
+
+--- Load notes from cache, trigger background sync if stale.
+function M.load()
+  load_from_disk()
 
   if M.is_stale() and not state.syncing then
     state.syncing = true
@@ -82,6 +94,8 @@ function M.persist()
   local data = {
     notes = state.notes,
     last_synced_at = state.last_synced_at,
+    templates = state.templates,
+    templates_last_synced_at = state.templates_last_synced_at,
   }
   vim.fn.writefile({ vim.json.encode(data) }, cache_path())
 end
@@ -118,7 +132,7 @@ function M.remove(id)
   M.persist()
 end
 
---- Return true if the cache is stale (TTL expired).
+--- Return true if the notes cache is stale (TTL expired).
 ---@return boolean
 function M.is_stale()
   return state.last_synced_at + config.values.cache_ttl < os.time()
@@ -146,6 +160,109 @@ function M.sync(callback)
   end)
 end
 
+-- Template methods
+
+--- Return true if the template cache is stale.
+---@return boolean
+local function is_templates_stale()
+  return state.templates_last_synced_at + config.values.cache_ttl < os.time()
+end
+
+--- Sync templates from server.
+---@param callback function|nil
+function M.sync_templates(callback)
+  local api = require("mybot-notes.api")
+  api.get_templates(function(err, templates)
+    if err then
+      vim.notify("mybot-notes: template sync failed: " .. err, vim.log.levels.WARN)
+      if callback then
+        callback()
+      end
+      return
+    end
+    state.templates = templates
+    state.templates_last_synced_at = os.time()
+    M.persist()
+    if callback then
+      callback()
+    end
+  end)
+end
+
+--- Ensure templates are loaded and fresh, then call callback with the list.
+--- If cached and fresh, calls back synchronously via vim.schedule.
+--- If stale, fetches from API first.
+---@param callback function(templates: table[])
+function M.ensure_templates(callback)
+  load_from_disk()
+  if not is_templates_stale() then
+    vim.schedule(function()
+      callback(state.templates)
+    end)
+    return
+  end
+  if state.templates_syncing then
+    vim.schedule(function()
+      callback(state.templates)
+    end)
+    return
+  end
+  state.templates_syncing = true
+  M.sync_templates(function()
+    state.templates_syncing = false
+    callback(state.templates)
+  end)
+end
+
+--- Update or insert a single template in the cache.
+---@param template table
+function M.upsert_template(template)
+  local found = false
+  for i, t in ipairs(state.templates) do
+    if t.id == template.id then
+      state.templates[i] = template
+      found = true
+      break
+    end
+  end
+  if not found then
+    state.templates[#state.templates + 1] = template
+  end
+  M.persist()
+end
+
+--- Remove a template from cache by id.
+---@param id string
+function M.remove_template(id)
+  local new_templates = {}
+  for _, t in ipairs(state.templates) do
+    if t.id ~= id then
+      new_templates[#new_templates + 1] = t
+    end
+  end
+  state.templates = new_templates
+  M.persist()
+end
+
+--- Return the current cached templates list (no sync, no disk load).
+---@return table[]
+function M.get_templates_cached()
+  return state.templates
+end
+
+--- Refresh both notes and templates from server.
+---@param callback function|nil
+function M.refresh_all(callback)
+  local remaining = 2
+  local function check_done()
+    remaining = remaining - 1
+    if remaining == 0 and callback then
+      callback()
+    end
+  end
+  M.sync(check_done)
+  M.sync_templates(check_done)
+end
 
 --- Search notes locally. Case-insensitive substring match on title and content.
 --- Returns matching notes, title matches sorted first.

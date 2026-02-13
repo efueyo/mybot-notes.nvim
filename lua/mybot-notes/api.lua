@@ -119,4 +119,63 @@ function M.daily(callback)
   })
 end
 
+--- GET /notes/templates — fetch all templates
+function M.get_templates(callback)
+  curl.get({
+    url = config.values.base_url .. "/notes/templates",
+    headers = headers(false),
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- GET /notes/new?template={id} — get resolved template content
+function M.resolve_template(id, callback)
+  curl.get({
+    url = config.values.base_url .. "/notes/new",
+    headers = headers(false),
+    query = { template = id },
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- PUT /notes/{id} with is_template=true — convert note to template
+function M.make_template(id, title, content, callback)
+  curl.put({
+    url = config.values.base_url .. "/notes/" .. id,
+    headers = headers(true),
+    body = vim.json.encode({ title = title, content = content }),
+    query = { is_template = "true" },
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- PUT /notes/templates/{id} — update template
+function M.update_template(id, title, content, callback)
+  curl.put({
+    url = config.values.base_url .. "/notes/templates/" .. id,
+    headers = headers(true),
+    body = vim.json.encode({ title = title, content = content }),
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- DELETE /notes/templates/{id} — soft delete template
+function M.delete_template(id, callback)
+  curl.delete({
+    url = config.values.base_url .. "/notes/templates/" .. id,
+    headers = headers(false),
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
 return M
