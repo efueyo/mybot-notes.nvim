@@ -11,6 +11,7 @@ M.defaults = {
     search = "<leader>ns",
     daily = "<leader>nd",
     tags = "<leader>nt",
+    today = "<leader>nr",
   },
 }
 

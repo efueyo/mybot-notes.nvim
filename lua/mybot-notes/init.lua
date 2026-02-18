@@ -88,6 +88,14 @@ function M.setup(opts)
     end)
   end, { desc = "Mybot Sync notes and templates cache from server" })
 
+  vim.api.nvim_create_user_command("NotesToday", function(cmd_opts)
+    local date = nil
+    if cmd_opts.args and cmd_opts.args ~= "" then
+      date = cmd_opts.args
+    end
+    require("mybot-notes.today").open(date)
+  end, { nargs = "?", desc = "Mybot Open today dashboard" })
+
   vim.api.nvim_create_user_command("NotesSearch", function()
     require("mybot-notes.telescope").search()
   end, { desc = "Search notes with Telescope" })
@@ -109,6 +117,9 @@ function M.setup(opts)
   end
   if keymaps.tags and keymaps.tags ~= "" and keymaps.tags ~= false then
     vim.keymap.set("n", keymaps.tags, "<cmd>NotesTags<cr>", { desc = "Mybot Browse tags" })
+  end
+  if keymaps.today and keymaps.today ~= "" and keymaps.today ~= false then
+    vim.keymap.set("n", keymaps.today, "<cmd>NotesToday<cr>", { desc = "Mybot Today dashboard" })
   end
 
   -- Optional: nvim-cmp integration

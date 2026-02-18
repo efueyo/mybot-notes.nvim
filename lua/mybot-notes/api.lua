@@ -178,4 +178,56 @@ function M.delete_template(id, callback)
   })
 end
 
+--- GET /today?date=YYYY-MM-DD — fetch today dashboard data
+function M.today(date, callback)
+  local query = nil
+  if date and date ~= "" then
+    query = { date = date }
+  end
+  curl.get({
+    url = config.values.base_url .. "/today",
+    headers = headers(false),
+    query = query,
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- POST /tasks/{id}/complete — mark task done
+function M.complete_task(id, callback)
+  curl.post({
+    url = config.values.base_url .. "/tasks/" .. id .. "/complete",
+    headers = headers(false),
+    body = "",
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- POST /tasks/{id}/uncomplete — mark task undone
+function M.uncomplete_task(id, callback)
+  curl.post({
+    url = config.values.base_url .. "/tasks/" .. id .. "/uncomplete",
+    headers = headers(false),
+    body = "",
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
+--- PUT /tasks/{id} — update task (full replacement)
+function M.update_task(id, body, callback)
+  curl.put({
+    url = config.values.base_url .. "/tasks/" .. id,
+    headers = headers(true),
+    body = vim.json.encode(body),
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
 return M
