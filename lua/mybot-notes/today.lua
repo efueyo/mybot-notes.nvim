@@ -104,6 +104,9 @@ local function format_event_line(event)
   if event.calendar_name and event.calendar_name ~= "" then
     line = line .. " (" .. event.calendar_name .. ")"
   end
+  if event.has_note then
+    line = line .. " \u{1f4dd}"
+  end
   return line
 end
 
@@ -256,7 +259,7 @@ local function build_lines(data)
 
   -- Legend
   lines[#lines + 1] = ""
-  local legend_keys = "\u{23ce} toggle complete  e estimate  r refresh  ]d/[d day  q close"
+  local legend_keys = "\u{23ce} action  e estimate  r refresh  ]d/[d day  q close"
   local legend_keys_ln = #lines + 1
   lines[#lines + 1] = legend_keys
   highlights[#highlights + 1] = { legend_keys_ln, 0, #legend_keys, "MybotTodayLegend" }
@@ -389,10 +392,10 @@ end
 local function setup_keymaps(bufnr)
   local opts = { buffer = bufnr, nowait = true, silent = true }
 
-  -- <CR> toggle task completion
+  -- <CR> action: toggle task completion / open or create event note
   vim.keymap.set("n", "<CR>", function()
-    M.toggle_task(bufnr)
-  end, vim.tbl_extend("force", opts, { desc = "Mybot Toggle task completion" }))
+    M.action(bufnr)
+  end, vim.tbl_extend("force", opts, { desc = "Mybot Action on current line" }))
 
   -- e edit time estimate
   vim.keymap.set("n", "e", function()
@@ -445,6 +448,23 @@ local function get_cursor_entry(bufnr)
   return line_map[tostring(line)] or line_map[line]
 end
 
+--- Dispatch action based on the current line type.
+---@param bufnr number
+function M.action(bufnr)
+  if vim.b[bufnr].mynotes_today_loading then
+    return
+  end
+  local entry = get_cursor_entry(bufnr)
+  if not entry then
+    return
+  end
+  if entry.type == "task" then
+    M.toggle_task(bufnr)
+  elseif entry.type == "event" then
+    M.event_note(bufnr)
+  end
+end
+
 --- Toggle task completion on the current line.
 ---@param bufnr number
 function M.toggle_task(bufnr)
@@ -468,6 +488,52 @@ function M.toggle_task(bufnr)
       return
     end
     fetch_and_render(bufnr, date, task_id)
+  end)
+end
+
+--- Open or create a note for the event on the current line.
+--- The backend handles both cases: returns existing note or creates a new one.
+---@param bufnr number
+function M.event_note(bufnr)
+  if vim.b[bufnr].mynotes_today_loading then
+    return
+  end
+  local entry = get_cursor_entry(bufnr)
+  if not entry or entry.type ~= "event" then
+    return
+  end
+  local event = entry.event
+  local date = vim.b[bufnr].mynotes_today_date
+
+  local body = {
+    title = event.title,
+    date = date or "",
+    attendees = event.attendees,
+  }
+  if not event.is_all_day and event.start_time then
+    local h, m = event.start_time:match("T(%d%d):(%d%d)")
+    if h and m then
+      local hour = tonumber(h)
+      local suffix = hour >= 12 and "PM" or "AM"
+      if hour > 12 then
+        hour = hour - 12
+      elseif hour == 0 then
+        hour = 12
+      end
+      body.time = hour .. ":" .. m .. " " .. suffix
+    end
+  end
+
+  vim.b[bufnr].mynotes_today_loading = true
+  api.create_meeting_note(event.id, body, function(err, note)
+    vim.b[bufnr].mynotes_today_loading = false
+    if err then
+      vim.notify("Failed to open meeting note: " .. err, vim.log.levels.ERROR)
+      return
+    end
+    require("mybot-notes.cache").upsert(note)
+    require("mybot-notes.buffer").open(note)
+    fetch_and_render(bufnr, date)
   end)
 end
 

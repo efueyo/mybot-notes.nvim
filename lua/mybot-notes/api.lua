@@ -230,4 +230,16 @@ function M.update_task(id, body, callback)
   })
 end
 
+--- POST /today/meetings/{eventId}/note — create or get meeting note
+function M.create_meeting_note(event_id, body, callback)
+  curl.post({
+    url = config.values.base_url .. "/today/meetings/" .. event_id .. "/note",
+    headers = headers(true),
+    body = vim.json.encode(body),
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
 return M
