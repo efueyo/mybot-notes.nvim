@@ -163,11 +163,12 @@ local function build_capacity_bar(data)
   local planned = data.planned_minutes or 0
   local meetings = data.meeting_minutes or 0
 
-  local used = completed + planned + meetings
+  local remaining = math.max(0, planned - completed)
+  local used = planned + meetings
   local used_str = format_duration(used)
   local total_str = format_duration(total)
 
-  local c_blocks, p_blocks, m_blocks = compute_bar_blocks(completed, planned, meetings, total)
+  local c_blocks, p_blocks, m_blocks = compute_bar_blocks(completed, remaining, meetings, total)
   local empty = math.max(0, BAR_WIDTH - c_blocks - p_blocks - m_blocks)
 
   local bar = "["
@@ -184,7 +185,7 @@ local function build_capacity_bar(data)
   local legend = "\u{25a0} Completed "
     .. format_duration(completed)
     .. "  \u{25a0} Planned "
-    .. format_duration(planned)
+    .. format_duration(remaining)
     .. "  \u{25a0} Meetings "
     .. format_duration(meetings)
 
