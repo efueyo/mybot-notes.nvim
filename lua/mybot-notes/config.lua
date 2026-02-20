@@ -1,5 +1,6 @@
 local M = {}
 
+---@type mybot.Config
 M.defaults = {
   base_url = "",
   api_key = "",
@@ -15,8 +16,10 @@ M.defaults = {
   },
 }
 
+---@type mybot.Config
 M.values = {}
 
+---@param opts? mybot.Config
 function M.setup(opts)
   M.values = vim.tbl_deep_extend("force", {}, M.defaults, opts or {})
 
@@ -49,6 +52,7 @@ function M.setup(opts)
   end
 end
 
+---@return string
 function M.get_api_key()
   if M.values._resolved_api_key then
     return M.values._resolved_api_key
