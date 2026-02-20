@@ -46,7 +46,7 @@
     "title": "Annotate telescope.lua with mybot.Note types",
     "description": "In lua/mybot-notes/telescope.lua, add ---@param note mybot.Note to the make_entry local function. Update the get_notes return annotation to ---@return mybot.Note[]. The opts parameters on M.search, M.tags, and M.template_picker are already annotated as ---@param opts table|nil which is correct (they are telescope opts tables, not our domain types).",
     "files": ["lua/mybot-notes/telescope.lua"],
-    "completed": false
+    "completed": true
   },
   {
     "id": 8,

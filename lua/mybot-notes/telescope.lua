@@ -5,6 +5,7 @@ local api = require("mybot-notes.api")
 local M = {}
 
 --- Build the entry_maker function for the notes picker.
+---@param note mybot.Note
 local function make_entry(note)
   return {
     value = note,
@@ -15,7 +16,7 @@ end
 
 --- Get the list of notes for the picker, depending on tag filter.
 ---@param default_tag string|nil
----@return table[]
+---@return mybot.Note[]
 local function get_notes(default_tag)
   if default_tag then
     return cache.get_by_tag(default_tag)
