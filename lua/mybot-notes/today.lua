@@ -77,7 +77,7 @@ local function format_date_heading(date_str)
 end
 
 --- Format a time range for an event.
----@param event table
+---@param event mybot.Event
 ---@return string
 local function format_event_time(event)
   if event.is_all_day then
@@ -97,7 +97,7 @@ local function format_event_time(event)
 end
 
 --- Build a single event line.
----@param event table
+---@param event mybot.Event
 ---@return string
 local function format_event_line(event)
   local line = format_event_time(event) .. " " .. event.title
@@ -111,7 +111,7 @@ local function format_event_line(event)
 end
 
 --- Build a single task line.
----@param task table
+---@param task mybot.Task
 ---@return string
 local function format_task_line(task)
   local marker = task.completed and "\u{25cf}" or "\u{25cb}"
@@ -155,7 +155,7 @@ local function compute_bar_blocks(completed, planned, meetings, total)
 end
 
 --- Build the capacity bar string.
----@param data table API response
+---@param data mybot.TodayData
 ---@return string bar_line, string legend_line, number c_blocks, number p_blocks, number m_blocks
 local function build_capacity_bar(data)
   local total = data.total_minutes or 0
@@ -192,8 +192,8 @@ local function build_capacity_bar(data)
 end
 
 --- Build all buffer lines and the line map from API data.
----@param data table API response
----@return string[] lines, table line_map, table highlight_ranges
+---@param data mybot.TodayData
+---@return string[], table<number, mybot.LineMapEntry>, mybot.HighlightRange[]
 local function build_lines(data)
   local lines = {}
   local line_map = {}
@@ -325,7 +325,7 @@ end
 
 --- Render data into the buffer.
 ---@param bufnr number
----@param data table API response
+---@param data mybot.TodayData
 ---@param restore_task_id string|nil task ID to restore cursor to
 local function render(bufnr, data, restore_task_id)
   stop_loading_spinner(bufnr)
@@ -437,7 +437,7 @@ end
 
 --- Get the current task entry under the cursor, if any.
 ---@param bufnr number
----@return table|nil entry from line_map
+---@return mybot.LineMapEntry|nil
 local function get_cursor_entry(bufnr)
   local line = vim.api.nvim_win_get_cursor(0)[1]
   local line_map = vim.b[bufnr].mynotes_today_lines

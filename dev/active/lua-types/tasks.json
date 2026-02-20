@@ -39,7 +39,7 @@
     "title": "Annotate today.lua with mybot.Task, Event, TodayData, and LineMapEntry types",
     "description": "In lua/mybot-notes/today.lua, replace all ---@param event table with ---@param event mybot.Event (format_event_time, format_event_line). Replace all ---@param task table with ---@param task mybot.Task (format_task_line). Replace ---@param data table with ---@param data mybot.TodayData (build_capacity_bar, build_lines, render). Update build_lines return annotation to ---@return string[], table<number, mybot.LineMapEntry>, mybot.HighlightRange[]. Update get_cursor_entry return annotation to ---@return mybot.LineMapEntry|nil.",
     "files": ["lua/mybot-notes/today.lua"],
-    "completed": false
+    "completed": true
   },
   {
     "id": 7,
