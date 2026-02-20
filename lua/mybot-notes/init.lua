@@ -1,5 +1,6 @@
 local M = {}
 
+---@param opts? mybot.Config
 function M.setup(opts)
   local config = require("mybot-notes.config")
   config.setup(opts)

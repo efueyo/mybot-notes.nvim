@@ -53,6 +53,6 @@
     "title": "Annotate init.lua setup function",
     "description": "In lua/mybot-notes/init.lua, add ---@param opts? mybot.Config annotation to the M.setup function.",
     "files": ["lua/mybot-notes/init.lua"],
-    "completed": false
+    "completed": true
   }
 ]
