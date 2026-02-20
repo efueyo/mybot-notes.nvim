@@ -7,12 +7,13 @@ local ns = vim.api.nvim_create_namespace("mybot_today")
 
 local BAR_WIDTH = 28
 
-local spinner_frames = { "\u{280b}", "\u{2819}", "\u{2839}", "\u{2838}", "\u{283c}", "\u{2834}", "\u{2826}", "\u{2827}", "\u{2807}", "\u{280f}" }
+local spinner_frames = { "\u{280b}", "\u{2819}", "\u{2839}", "\u{2838}", "\u{283c}", "\u{2834}", "\u{2826}", "\u{2827}",
+  "\u{2807}", "\u{280f}" }
 local loading_timer = {} -- keyed by bufnr
 
 --- Define highlight groups with default = true so users can override.
 local function setup_highlights()
-  vim.api.nvim_set_hl(0, "MybotCapacityCompleted", { default = true, link = "DiffAdd" })
+  vim.api.nvim_set_hl(0, "MybotCapacityCompleted", { default = true, link = "DiagnosticOk" })
   vim.api.nvim_set_hl(0, "MybotCapacityPlanned", { default = true, link = "Function" })
   vim.api.nvim_set_hl(0, "MybotCapacityMeetings", { default = true, link = "WarningMsg" })
   vim.api.nvim_set_hl(0, "MybotTodayLegend", { default = true, link = "Comment" })
@@ -172,22 +173,22 @@ local function build_capacity_bar(data)
   local empty = math.max(0, BAR_WIDTH - c_blocks - p_blocks - m_blocks)
 
   local bar = "["
-    .. string.rep("\u{2588}", c_blocks)
-    .. string.rep("\u{2588}", p_blocks)
-    .. string.rep("\u{2588}", m_blocks)
-    .. string.rep("\u{2591}", empty)
-    .. "]"
-    .. " "
-    .. used_str
-    .. " / "
-    .. total_str
+      .. string.rep("\u{2588}", c_blocks)
+      .. string.rep("\u{2588}", p_blocks)
+      .. string.rep("\u{2588}", m_blocks)
+      .. string.rep("\u{2591}", empty)
+      .. "]"
+      .. " "
+      .. used_str
+      .. " / "
+      .. total_str
 
   local legend = "\u{25a0} Completed "
-    .. format_duration(completed)
-    .. "  \u{25a0} Planned "
-    .. format_duration(remaining)
-    .. "  \u{25a0} Meetings "
-    .. format_duration(meetings)
+      .. format_duration(completed)
+      .. "  \u{25a0} Planned "
+      .. format_duration(remaining)
+      .. "  \u{25a0} Meetings "
+      .. format_duration(meetings)
 
   return bar, legend, c_blocks, p_blocks, m_blocks
 end
