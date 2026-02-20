@@ -183,9 +183,9 @@ local function build_capacity_bar(data)
       .. " / "
       .. total_str
 
-  local legend = "\u{25a0} Completed "
+  local legend = "\u{25a0} Done "
       .. format_duration(completed)
-      .. "  \u{25a0} Planned "
+      .. "  \u{25a0} Remaining "
       .. format_duration(remaining)
       .. "  \u{25a0} Meetings "
       .. format_duration(meetings)
