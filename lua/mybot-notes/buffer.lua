@@ -132,7 +132,7 @@ end
 --- Open an existing note in a buffer.
 --- If a buffer with mynotes://{id} already exists, switch to it.
 --- Otherwise create a new buffer, populate with note.content, set metadata.
----@param note table
+---@param note mybot.Note
 function M.open(note)
   local name = "mynotes://" .. note.id
 
@@ -200,7 +200,7 @@ end
 
 --- Open an existing template in a buffer for editing.
 --- Saves go to PUT /notes/templates/{id} via the mynotes_is_template flag.
----@param template table
+---@param template mybot.Template
 function M.open_template(template)
   local name = "mynotes://template/" .. template.id
 

@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "title": "Create types.lua with all class and alias definitions",
+    "description": "Create lua/mybot-notes/types.lua containing all LuaLS type definitions: mybot.Note (id, title, content, tags?, current_version?, daily_date?, created_at?, updated_at?), mybot.Template (id, title, content), mybot.Task (id, title, completed, estimated_minutes?, tags?, scheduled_for?), mybot.Event (id, title, is_all_day, start_time?, end_time?, calendar_name?, has_note, attendees?), mybot.TodayData (date, prev_date, next_date, total_minutes, completed_minutes, planned_minutes, meeting_minutes, events, tasks), mybot.LineMapTaskEntry/EventEntry/LegendEntry and the mybot.LineMapEntry alias, mybot.Keymaps, mybot.Config, mybot.CacheState, mybot.HighlightRange, mybot.NoteTitle, and mybot.ApiCallback alias. The file has no runtime code — just annotations and a final `return {}` statement.",
+    "files": ["lua/mybot-notes/types.lua"],
+    "completed": true
+  },
+  {
+    "id": 2,
+    "title": "Annotate config.lua with mybot.Config types",
+    "description": "In lua/mybot-notes/config.lua, add ---@type mybot.Config annotations to M.defaults and M.values. Annotate M.setup with ---@param opts? mybot.Config. Annotate M.get_api_key with ---@return string. Do not change any runtime code.",
+    "files": ["lua/mybot-notes/config.lua"],
+    "completed": true
+  },
+  {
+    "id": 3,
+    "title": "Annotate api.lua with typed callback parameters",
+    "description": "In lua/mybot-notes/api.lua, add ---@param and ---@return annotations to all 17 public API functions using the specific callback types from context.md. For example: M.get_all gets ---@param callback fun(err: string|nil, notes: mybot.Note[]|nil), M.today gets ---@param callback fun(err: string|nil, data: mybot.TodayData|nil). Keep the existing annotations on headers() and handle_response() as they are already correct. Add ---@param annotations for non-callback params too (id as string, query as string, title as string, content as string, date as string|nil, body as table, event_id as string).",
+    "files": ["lua/mybot-notes/api.lua"],
+    "completed": true
+  },
+  {
+    "id": 4,
+    "title": "Annotate cache.lua with mybot.CacheState and named types",
+    "description": "In lua/mybot-notes/cache.lua, add ---@type mybot.CacheState to the state local variable. Replace all ---@param note table with ---@param note mybot.Note. Replace all ---@param template table with ---@param template mybot.Template. Update callback annotations: M.sync and M.sync_templates get ---@param callback? fun(), M.ensure_templates gets ---@param callback fun(templates: mybot.Template[]), M.refresh_all gets ---@param callback? fun(). Update return type annotations: M.search returns mybot.Note[], M.get_by_tag returns mybot.Note[], M.find_by_title returns mybot.Note|nil, M.find_by_id returns mybot.Note|nil, M.get_titles returns mybot.NoteTitle[], M.get_templates_cached returns mybot.Template[].",
+    "files": ["lua/mybot-notes/cache.lua"],
+    "completed": true
+  },
+  {
+    "id": 5,
+    "title": "Annotate buffer.lua with mybot.Note and mybot.Template types",
+    "description": "In lua/mybot-notes/buffer.lua, replace the ---@param note table annotation on M.open with ---@param note mybot.Note. Replace the ---@param template table annotation on M.open_template with ---@param template mybot.Template. All other local function annotations (find_buf_by_name, set_buf_options, register_write_autocmd, build_buffer_content, strip_title_heading, extract_title) are already correct with primitive types — no changes needed for those.",
+    "files": ["lua/mybot-notes/buffer.lua"],
+    "completed": true
+  },
+  {
+    "id": 6,
+    "title": "Annotate today.lua with mybot.Task, Event, TodayData, and LineMapEntry types",
+    "description": "In lua/mybot-notes/today.lua, replace all ---@param event table with ---@param event mybot.Event (format_event_time, format_event_line). Replace all ---@param task table with ---@param task mybot.Task (format_task_line). Replace ---@param data table with ---@param data mybot.TodayData (build_capacity_bar, build_lines, render). Update build_lines return annotation to ---@return string[], table<number, mybot.LineMapEntry>, mybot.HighlightRange[]. Update get_cursor_entry return annotation to ---@return mybot.LineMapEntry|nil.",
+    "files": ["lua/mybot-notes/today.lua"],
+    "completed": false
+  },
+  {
+    "id": 7,
+    "title": "Annotate telescope.lua with mybot.Note types",
+    "description": "In lua/mybot-notes/telescope.lua, add ---@param note mybot.Note to the make_entry local function. Update the get_notes return annotation to ---@return mybot.Note[]. The opts parameters on M.search, M.tags, and M.template_picker are already annotated as ---@param opts table|nil which is correct (they are telescope opts tables, not our domain types).",
+    "files": ["lua/mybot-notes/telescope.lua"],
+    "completed": false
+  },
+  {
+    "id": 8,
+    "title": "Annotate init.lua setup function",
+    "description": "In lua/mybot-notes/init.lua, add ---@param opts? mybot.Config annotation to the M.setup function.",
+    "files": ["lua/mybot-notes/init.lua"],
+    "completed": false
+  }
+]
