@@ -40,6 +40,7 @@ local function handle_response(response, callback)
 end
 
 --- GET /notes — fetch all notes
+---@param callback fun(err: string|nil, notes: mybot.Note[]|nil)
 function M.get_all(callback)
   curl.get({
     url = config.values.base_url .. "/notes",
@@ -51,6 +52,8 @@ function M.get_all(callback)
 end
 
 --- GET /notes?q=<query> — search notes
+---@param query string
+---@param callback fun(err: string|nil, notes: mybot.Note[]|nil)
 function M.search(query, callback)
   curl.get({
     url = config.values.base_url .. "/notes",
@@ -63,6 +66,8 @@ function M.search(query, callback)
 end
 
 --- GET /notes/{id} — get single note
+---@param id string
+---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.get(id, callback)
   curl.get({
     url = config.values.base_url .. "/notes/" .. id,
@@ -74,6 +79,9 @@ function M.get(id, callback)
 end
 
 --- POST /notes — create note
+---@param title string
+---@param content string
+---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.create(title, content, callback)
   curl.post({
     url = config.values.base_url .. "/notes",
@@ -86,6 +94,10 @@ function M.create(title, content, callback)
 end
 
 --- PUT /notes/{id} — update note
+---@param id string
+---@param title string
+---@param content string
+---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.update(id, title, content, callback)
   curl.put({
     url = config.values.base_url .. "/notes/" .. id,
@@ -98,6 +110,8 @@ function M.update(id, title, content, callback)
 end
 
 --- DELETE /notes/{id} — soft delete
+---@param id string
+---@param callback fun(err: string|nil, data: table|nil)
 function M.delete(id, callback)
   curl.delete({
     url = config.values.base_url .. "/notes/" .. id,
@@ -109,6 +123,7 @@ function M.delete(id, callback)
 end
 
 --- GET /notes/daily — get or create today's daily note
+---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.daily(callback)
   curl.get({
     url = config.values.base_url .. "/notes/daily",
@@ -120,6 +135,7 @@ function M.daily(callback)
 end
 
 --- GET /notes/templates — fetch all templates
+---@param callback fun(err: string|nil, templates: mybot.Template[]|nil)
 function M.get_templates(callback)
   curl.get({
     url = config.values.base_url .. "/notes/templates",
@@ -131,6 +147,8 @@ function M.get_templates(callback)
 end
 
 --- GET /notes/new?template={id} — get resolved template content
+---@param id string
+---@param callback fun(err: string|nil, resolved: mybot.Template|nil)
 function M.resolve_template(id, callback)
   curl.get({
     url = config.values.base_url .. "/notes/new",
@@ -143,6 +161,10 @@ function M.resolve_template(id, callback)
 end
 
 --- PUT /notes/{id} with is_template=true — convert note to template
+---@param id string
+---@param title string
+---@param content string
+---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.make_template(id, title, content, callback)
   curl.put({
     url = config.values.base_url .. "/notes/" .. id,
@@ -156,6 +178,10 @@ function M.make_template(id, title, content, callback)
 end
 
 --- PUT /notes/templates/{id} — update template
+---@param id string
+---@param title string
+---@param content string
+---@param callback fun(err: string|nil, template: mybot.Template|nil)
 function M.update_template(id, title, content, callback)
   curl.put({
     url = config.values.base_url .. "/notes/templates/" .. id,
@@ -168,6 +194,8 @@ function M.update_template(id, title, content, callback)
 end
 
 --- DELETE /notes/templates/{id} — soft delete template
+---@param id string
+---@param callback fun(err: string|nil, data: table|nil)
 function M.delete_template(id, callback)
   curl.delete({
     url = config.values.base_url .. "/notes/templates/" .. id,
@@ -179,6 +207,8 @@ function M.delete_template(id, callback)
 end
 
 --- GET /today?date=YYYY-MM-DD — fetch today dashboard data
+---@param date string|nil
+---@param callback fun(err: string|nil, data: mybot.TodayData|nil)
 function M.today(date, callback)
   local query = nil
   if date and date ~= "" then
@@ -195,6 +225,8 @@ function M.today(date, callback)
 end
 
 --- POST /tasks/{id}/complete — mark task done
+---@param id string
+---@param callback fun(err: string|nil, data: table|nil)
 function M.complete_task(id, callback)
   curl.post({
     url = config.values.base_url .. "/tasks/" .. id .. "/complete",
@@ -207,6 +239,8 @@ function M.complete_task(id, callback)
 end
 
 --- POST /tasks/{id}/uncomplete — mark task undone
+---@param id string
+---@param callback fun(err: string|nil, data: table|nil)
 function M.uncomplete_task(id, callback)
   curl.post({
     url = config.values.base_url .. "/tasks/" .. id .. "/uncomplete",
@@ -219,6 +253,9 @@ function M.uncomplete_task(id, callback)
 end
 
 --- PUT /tasks/{id} — update task (full replacement)
+---@param id string
+---@param body table
+---@param callback fun(err: string|nil, data: table|nil)
 function M.update_task(id, body, callback)
   curl.put({
     url = config.values.base_url .. "/tasks/" .. id,
@@ -231,6 +268,9 @@ function M.update_task(id, body, callback)
 end
 
 --- POST /today/meetings/{eventId}/note — create or get meeting note
+---@param event_id string
+---@param body table
+---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.create_meeting_note(event_id, body, callback)
   curl.post({
     url = config.values.base_url .. "/today/meetings/" .. event_id .. "/note",
