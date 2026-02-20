@@ -2,6 +2,7 @@ local config = require("mybot-notes.config")
 
 local M = {}
 
+---@type mybot.CacheState
 local state = {
   notes = {},
   notes_by_id = {},
@@ -101,7 +102,7 @@ function M.persist()
 end
 
 --- Update or insert a single note in the cache.
----@param note table
+---@param note mybot.Note
 function M.upsert(note)
   local found = false
   for i, n in ipairs(state.notes) do
@@ -139,7 +140,7 @@ function M.is_stale()
 end
 
 --- Full sync: fetch all notes from API, replace cache, rebuild indexes, persist.
----@param callback function called when sync is complete
+---@param callback? fun()
 function M.sync(callback)
   local api = require("mybot-notes.api")
   api.get_all(function(err, notes)
@@ -169,7 +170,7 @@ local function is_templates_stale()
 end
 
 --- Sync templates from server.
----@param callback function|nil
+---@param callback? fun()
 function M.sync_templates(callback)
   local api = require("mybot-notes.api")
   api.get_templates(function(err, templates)
@@ -192,7 +193,7 @@ end
 --- Ensure templates are loaded and fresh, then call callback with the list.
 --- If cached and fresh, calls back synchronously via vim.schedule.
 --- If stale, fetches from API first.
----@param callback function(templates: table[])
+---@param callback fun(templates: mybot.Template[])
 function M.ensure_templates(callback)
   load_from_disk()
   if not is_templates_stale() then
@@ -215,7 +216,7 @@ function M.ensure_templates(callback)
 end
 
 --- Update or insert a single template in the cache.
----@param template table
+---@param template mybot.Template
 function M.upsert_template(template)
   local found = false
   for i, t in ipairs(state.templates) do
@@ -245,13 +246,13 @@ function M.remove_template(id)
 end
 
 --- Return the current cached templates list (no sync, no disk load).
----@return table[]
+---@return mybot.Template[]
 function M.get_templates_cached()
   return state.templates
 end
 
 --- Refresh both notes and templates from server.
----@param callback function|nil
+---@param callback? fun()
 function M.refresh_all(callback)
   local remaining = 2
   local function check_done()
@@ -267,7 +268,7 @@ end
 --- Search notes locally. Case-insensitive substring match on title and content.
 --- Returns matching notes, title matches sorted first.
 ---@param query string
----@return table[]
+---@return mybot.Note[]
 function M.search(query)
   M.load()
   local q = query:lower()
@@ -300,7 +301,7 @@ end
 
 --- Return notes that have the given tag (case-insensitive match).
 ---@param tag string
----@return table[]
+---@return mybot.Note[]
 function M.get_by_tag(tag)
   M.load()
   local t = tag:lower()
@@ -320,7 +321,7 @@ end
 
 --- Find a note by title (case-insensitive exact match).
 ---@param title string
----@return table|nil
+---@return mybot.Note|nil
 function M.find_by_title(title)
   M.load()
   return state.notes_by_title[title:lower()]
@@ -328,14 +329,14 @@ end
 
 --- Find a note by id.
 ---@param id string
----@return table|nil
+---@return mybot.Note|nil
 function M.find_by_id(id)
   M.load()
   return state.notes_by_id[id]
 end
 
 --- Return list of {id, title} for all cached notes (used by cmp source).
----@return table[]
+---@return mybot.NoteTitle[]
 function M.get_titles()
   M.load()
   local result = {}
