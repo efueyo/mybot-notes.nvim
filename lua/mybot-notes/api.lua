@@ -267,6 +267,20 @@ function M.update_task(id, body, callback)
   })
 end
 
+--- POST /tasks — create a new task
+---@param body table
+---@param callback fun(err: string|nil, data: table|nil)
+function M.create_task(body, callback)
+  curl.post({
+    url = config.values.base_url .. "/tasks",
+    headers = headers(true),
+    body = vim.json.encode(body),
+    callback = function(response)
+      handle_response(response, callback)
+    end,
+  })
+end
+
 --- POST /today/meetings/{eventId}/note — create or get meeting note
 ---@param event_id string
 ---@param body table

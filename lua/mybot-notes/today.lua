@@ -259,7 +259,7 @@ local function build_lines(data)
 
   -- Legend
   lines[#lines + 1] = ""
-  local legend_keys = "\u{23ce} action  e estimate  r refresh  ]d/[d day  q close"
+  local legend_keys = "\u{23ce} action  a add task  e estimate  r refresh  ]d/[d day  q close"
   local legend_keys_ln = #lines + 1
   lines[#lines + 1] = legend_keys
   highlights[#highlights + 1] = { legend_keys_ln, 0, #legend_keys, "MybotTodayLegend" }
@@ -401,6 +401,11 @@ local function setup_keymaps(bufnr)
   vim.keymap.set("n", "e", function()
     M.edit_estimate(bufnr)
   end, vim.tbl_extend("force", opts, { desc = "Mybot Edit time estimate" }))
+
+  -- a add new task
+  vim.keymap.set("n", "a", function()
+    M.add_task(bufnr)
+  end, vim.tbl_extend("force", opts, { desc = "Mybot Add new task" }))
 
   -- r refresh
   vim.keymap.set("n", "r", function()
@@ -576,6 +581,36 @@ function M.edit_estimate(bufnr)
         return
       end
       fetch_and_render(bufnr, date, task_id)
+    end)
+  end)
+end
+
+--- Add a new task to the current day.
+---@param bufnr number
+function M.add_task(bufnr)
+  if vim.b[bufnr].mynotes_today_loading then
+    return
+  end
+  local date = vim.b[bufnr].mynotes_today_date
+
+  vim.b[bufnr].mynotes_today_loading = true
+  vim.ui.input({ prompt = "Task title: " }, function(input)
+    if input == nil or vim.trim(input) == "" then
+      vim.b[bufnr].mynotes_today_loading = false
+      return
+    end
+    local body = {
+      title = vim.trim(input),
+      scheduled_for = date,
+    }
+    api.create_task(body, function(err, data)
+      vim.b[bufnr].mynotes_today_loading = false
+      if err then
+        vim.notify("Failed to create task: " .. err, vim.log.levels.ERROR)
+        return
+      end
+      local new_id = data and data.id or nil
+      fetch_and_render(bufnr, date, new_id)
     end)
   end)
 end
