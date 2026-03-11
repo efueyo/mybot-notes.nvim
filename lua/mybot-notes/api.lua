@@ -39,11 +39,11 @@ local function handle_response(response, callback)
   end)
 end
 
---- GET /notes — fetch all notes
+--- GET /api/notes — fetch all notes
 ---@param callback fun(err: string|nil, notes: mybot.Note[]|nil)
 function M.get_all(callback)
   curl.get({
-    url = config.values.base_url .. "/notes",
+    url = config.values.base_url .. "/api/notes",
     headers = headers(false),
     callback = function(response)
       handle_response(response, callback)
@@ -51,12 +51,12 @@ function M.get_all(callback)
   })
 end
 
---- GET /notes?q=<query> — search notes
+--- GET /api/notes?q=<query> — search notes
 ---@param query string
 ---@param callback fun(err: string|nil, notes: mybot.Note[]|nil)
 function M.search(query, callback)
   curl.get({
-    url = config.values.base_url .. "/notes",
+    url = config.values.base_url .. "/api/notes",
     headers = headers(false),
     query = { q = query },
     callback = function(response)
@@ -65,12 +65,12 @@ function M.search(query, callback)
   })
 end
 
---- GET /notes/{id} — get single note
+--- GET /api/notes/{id} — get single note
 ---@param id string
 ---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.get(id, callback)
   curl.get({
-    url = config.values.base_url .. "/notes/" .. id,
+    url = config.values.base_url .. "/api/notes/" .. id,
     headers = headers(false),
     callback = function(response)
       handle_response(response, callback)
@@ -78,13 +78,13 @@ function M.get(id, callback)
   })
 end
 
---- POST /notes — create note
+--- POST /api/notes — create note
 ---@param title string
 ---@param content string
 ---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.create(title, content, callback)
   curl.post({
-    url = config.values.base_url .. "/notes",
+    url = config.values.base_url .. "/api/notes",
     headers = headers(true),
     body = vim.json.encode({ title = title, content = content }),
     callback = function(response)
@@ -93,14 +93,14 @@ function M.create(title, content, callback)
   })
 end
 
---- PUT /notes/{id} — update note
+--- PUT /api/notes/{id} — update note
 ---@param id string
 ---@param title string
 ---@param content string
 ---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.update(id, title, content, callback)
   curl.put({
-    url = config.values.base_url .. "/notes/" .. id,
+    url = config.values.base_url .. "/api/notes/" .. id,
     headers = headers(true),
     body = vim.json.encode({ title = title, content = content }),
     callback = function(response)
@@ -114,7 +114,7 @@ end
 ---@param callback fun(err: string|nil, data: table|nil)
 function M.delete(id, callback)
   curl.delete({
-    url = config.values.base_url .. "/notes/" .. id,
+    url = config.values.base_url .. "/api/notes/" .. id,
     headers = headers(false),
     callback = function(response)
       handle_response(response, callback)
@@ -122,11 +122,11 @@ function M.delete(id, callback)
   })
 end
 
---- GET /notes/daily — get or create today's daily note
+--- GET /api/notes/daily — get or create today's daily note
 ---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.daily(callback)
   curl.get({
-    url = config.values.base_url .. "/notes/daily",
+    url = config.values.base_url .. "/api/notes/daily",
     headers = headers(false),
     callback = function(response)
       handle_response(response, callback)
@@ -134,11 +134,11 @@ function M.daily(callback)
   })
 end
 
---- GET /notes/templates — fetch all templates
+--- GET /api/notes/templates — fetch all templates
 ---@param callback fun(err: string|nil, templates: mybot.Template[]|nil)
 function M.get_templates(callback)
   curl.get({
-    url = config.values.base_url .. "/notes/templates",
+    url = config.values.base_url .. "/api/notes/templates",
     headers = headers(false),
     callback = function(response)
       handle_response(response, callback)
@@ -146,12 +146,12 @@ function M.get_templates(callback)
   })
 end
 
---- GET /notes/new?template={id} — get resolved template content
+--- GET /api/notes/new?template={id} — get resolved template content
 ---@param id string
 ---@param callback fun(err: string|nil, resolved: mybot.Template|nil)
 function M.resolve_template(id, callback)
   curl.get({
-    url = config.values.base_url .. "/notes/new",
+    url = config.values.base_url .. "/api/notes/new",
     headers = headers(false),
     query = { template = id },
     callback = function(response)
@@ -160,14 +160,14 @@ function M.resolve_template(id, callback)
   })
 end
 
---- PUT /notes/{id} with is_template=true — convert note to template
+--- PUT /api/notes/{id} with is_template=true — convert note to template
 ---@param id string
 ---@param title string
 ---@param content string
 ---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.make_template(id, title, content, callback)
   curl.put({
-    url = config.values.base_url .. "/notes/" .. id,
+    url = config.values.base_url .. "/api/notes/" .. id,
     headers = headers(true),
     body = vim.json.encode({ title = title, content = content }),
     query = { is_template = "true" },
@@ -177,14 +177,14 @@ function M.make_template(id, title, content, callback)
   })
 end
 
---- PUT /notes/templates/{id} — update template
+--- PUT /api/notes/templates/{id} — update template
 ---@param id string
 ---@param title string
 ---@param content string
 ---@param callback fun(err: string|nil, template: mybot.Template|nil)
 function M.update_template(id, title, content, callback)
   curl.put({
-    url = config.values.base_url .. "/notes/templates/" .. id,
+    url = config.values.base_url .. "/api/notes/templates/" .. id,
     headers = headers(true),
     body = vim.json.encode({ title = title, content = content }),
     callback = function(response)
@@ -198,7 +198,7 @@ end
 ---@param callback fun(err: string|nil, data: table|nil)
 function M.delete_template(id, callback)
   curl.delete({
-    url = config.values.base_url .. "/notes/templates/" .. id,
+    url = config.values.base_url .. "/api/notes/templates/" .. id,
     headers = headers(false),
     callback = function(response)
       handle_response(response, callback)
@@ -206,7 +206,7 @@ function M.delete_template(id, callback)
   })
 end
 
---- GET /today?date=YYYY-MM-DD — fetch today dashboard data
+--- GET /api/today?date=YYYY-MM-DD — fetch today dashboard data
 ---@param date string|nil
 ---@param callback fun(err: string|nil, data: mybot.TodayData|nil)
 function M.today(date, callback)
@@ -215,7 +215,7 @@ function M.today(date, callback)
     query = { date = date }
   end
   curl.get({
-    url = config.values.base_url .. "/today",
+    url = config.values.base_url .. "/api/today",
     headers = headers(false),
     query = query,
     callback = function(response)
@@ -224,12 +224,12 @@ function M.today(date, callback)
   })
 end
 
---- POST /tasks/{id}/complete — mark task done
+--- POST /api/tasks/{id}/complete — mark task done
 ---@param id string
 ---@param callback fun(err: string|nil, data: table|nil)
 function M.complete_task(id, callback)
   curl.post({
-    url = config.values.base_url .. "/tasks/" .. id .. "/complete",
+    url = config.values.base_url .. "/api/tasks/" .. id .. "/complete",
     headers = headers(false),
     body = "",
     callback = function(response)
@@ -238,12 +238,12 @@ function M.complete_task(id, callback)
   })
 end
 
---- POST /tasks/{id}/uncomplete — mark task undone
+--- POST /api/tasks/{id}/uncomplete — mark task undone
 ---@param id string
 ---@param callback fun(err: string|nil, data: table|nil)
 function M.uncomplete_task(id, callback)
   curl.post({
-    url = config.values.base_url .. "/tasks/" .. id .. "/uncomplete",
+    url = config.values.base_url .. "/api/tasks/" .. id .. "/uncomplete",
     headers = headers(false),
     body = "",
     callback = function(response)
@@ -252,13 +252,13 @@ function M.uncomplete_task(id, callback)
   })
 end
 
---- PUT /tasks/{id} — update task (full replacement)
+--- PUT /api/tasks/{id} — update task (full replacement)
 ---@param id string
 ---@param body table
 ---@param callback fun(err: string|nil, data: table|nil)
 function M.update_task(id, body, callback)
   curl.put({
-    url = config.values.base_url .. "/tasks/" .. id,
+    url = config.values.base_url .. "/api/tasks/" .. id,
     headers = headers(true),
     body = vim.json.encode(body),
     callback = function(response)
@@ -267,12 +267,12 @@ function M.update_task(id, body, callback)
   })
 end
 
---- POST /tasks — create a new task
+--- POST /api/tasks — create a new task
 ---@param body table
 ---@param callback fun(err: string|nil, data: table|nil)
 function M.create_task(body, callback)
   curl.post({
-    url = config.values.base_url .. "/tasks",
+    url = config.values.base_url .. "/api/tasks",
     headers = headers(true),
     body = vim.json.encode(body),
     callback = function(response)
@@ -281,13 +281,13 @@ function M.create_task(body, callback)
   })
 end
 
---- POST /today/meetings/{eventId}/note — create or get meeting note
+--- POST /api/today/meetings/{eventId}/note — create or get meeting note
 ---@param event_id string
 ---@param body table
 ---@param callback fun(err: string|nil, note: mybot.Note|nil)
 function M.create_meeting_note(event_id, body, callback)
   curl.post({
-    url = config.values.base_url .. "/today/meetings/" .. event_id .. "/note",
+    url = config.values.base_url .. "/api/today/meetings/" .. event_id .. "/note",
     headers = headers(true),
     body = vim.json.encode(body),
     callback = function(response)
