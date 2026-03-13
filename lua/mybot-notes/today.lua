@@ -231,19 +231,6 @@ local function build_lines(data)
   lines[#lines + 1] = legend_line
   highlights[#highlights + 1] = { legend_ln, 0, #legend_line, "MybotTodayLegend" }
 
-  -- Events section
-  local events = data.events or {}
-  if #events > 0 then
-    lines[#lines + 1] = ""
-    lines[#lines + 1] = "## Events"
-    lines[#lines + 1] = ""
-    for _, event in ipairs(events) do
-      local ln = #lines + 1
-      lines[#lines + 1] = format_event_line(event)
-      line_map[ln] = { type = "event", event = event }
-    end
-  end
-
   -- Tasks section
   lines[#lines + 1] = ""
   lines[#lines + 1] = "## Tasks"
@@ -256,6 +243,19 @@ local function build_lines(data)
       local ln = #lines + 1
       lines[#lines + 1] = format_task_line(task)
       line_map[ln] = { type = "task", task = task }
+    end
+  end
+
+  -- Events section
+  local events = data.events or {}
+  if #events > 0 then
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "## Events"
+    lines[#lines + 1] = ""
+    for _, event in ipairs(events) do
+      local ln = #lines + 1
+      lines[#lines + 1] = format_event_line(event)
+      line_map[ln] = { type = "event", event = event }
     end
   end
 
