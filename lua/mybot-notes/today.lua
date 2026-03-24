@@ -17,6 +17,15 @@ local function setup_highlights()
   vim.api.nvim_set_hl(0, "MybotCapacityPlanned", { default = true, link = "Function" })
   vim.api.nvim_set_hl(0, "MybotCapacityMeetings", { default = true, link = "WarningMsg" })
   vim.api.nvim_set_hl(0, "MybotTodayLegend", { default = true, link = "Comment" })
+  vim.api.nvim_set_hl(0, "MybotEventCurrent", { default = true, link = "DiagnosticInfo" })
+  -- Resolve Comment colors so we can add strikethrough (link + strikethrough is not supported)
+  local comment_hl = vim.api.nvim_get_hl(0, { name = "Comment", link = false })
+  vim.api.nvim_set_hl(0, "MybotEventPast", {
+    default = true,
+    fg = comment_hl.fg,
+    bg = comment_hl.bg,
+    strikethrough = true,
+  })
 end
 
 --- Format minutes into a human-readable string (e.g. 90 -> "1h30m").
@@ -97,11 +106,59 @@ local function format_event_time(event)
   return fmt(event.start_time) .. " - " .. fmt(event.end_time)
 end
 
+--- Parse an ISO timestamp into a Unix epoch (local time).
+---@param iso string e.g. "2026-03-24T14:30:00Z" or "2026-03-24T14:30:00+02:00"
+---@return number|nil
+local function parse_iso_epoch(iso)
+  if not iso then
+    return nil
+  end
+  local y, mo, d, h, mi, s = iso:match("^(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+  if not y then
+    return nil
+  end
+  return os.time({ year = tonumber(y), month = tonumber(mo), day = tonumber(d), hour = tonumber(h), min = tonumber(mi), sec = tonumber(s) })
+end
+
+--- Check whether an event has already ended.
+---@param event mybot.Event
+---@return boolean
+local function is_event_past(event)
+  if event.is_all_day then
+    return false
+  end
+  local end_epoch = parse_iso_epoch(event.end_time)
+  if not end_epoch then
+    return false
+  end
+  return end_epoch < os.time()
+end
+
+--- Check whether an event is currently happening (from 10 min before start to end).
+---@param event mybot.Event
+---@return boolean
+local function is_event_current(event)
+  if event.is_all_day then
+    return false
+  end
+  local start_epoch = parse_iso_epoch(event.start_time)
+  local end_epoch = parse_iso_epoch(event.end_time)
+  if not start_epoch or not end_epoch then
+    return false
+  end
+  local now = os.time()
+  return (start_epoch - 10 * 60) <= now and now < end_epoch
+end
+
 --- Build a single event line.
 ---@param event mybot.Event
 ---@return string
 local function format_event_line(event)
   local line = format_event_time(event) .. " " .. event.title
+  -- Past events get a compact line — no extras
+  if is_event_past(event) then
+    return line
+  end
   if event.calendar_name and event.calendar_name ~= "" then
     line = line .. " (" .. event.calendar_name .. ")"
   end
@@ -254,8 +311,14 @@ local function build_lines(data)
     lines[#lines + 1] = ""
     for _, event in ipairs(events) do
       local ln = #lines + 1
-      lines[#lines + 1] = format_event_line(event)
+      local event_line = format_event_line(event)
+      lines[#lines + 1] = event_line
       line_map[ln] = { type = "event", event = event }
+      if is_event_current(event) then
+        highlights[#highlights + 1] = { ln, 0, #event_line, "MybotEventCurrent" }
+      elseif is_event_past(event) then
+        highlights[#highlights + 1] = { ln, 0, #event_line, "MybotEventPast" }
+      end
     end
   end
 
